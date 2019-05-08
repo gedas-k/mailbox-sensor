@@ -2,14 +2,15 @@
 #include <avr/interrupt.h>
 
 // Adjust this part**********************************************
-#define sensorPin A1    // select the input pin for the potentiometer
-#define sensitivity 120 // sensor sensitivity
-#define IRPinOne 3      // select the pin for the IR LED
-#define IRPinTwo 4      // select the pin for the IR LED
-#define ledPin 0        // select the pin for the mail delivery LED
-#define brightness 1    // select mail delivery LED brightness (0-255)
-#define buttonPin 1     // select button pin
-#define timeMultiplyer 225  // ~8s x Multiplyer (1min - 8; 5min - 38; 30min - 225; 1h - 450)
+#define sensorPin A1            // select the input pin for the potentiometer
+#define IRPinOne 3              // select the pin for the IR LED
+#define IRPinTwo 4              // select the pin for the IR LED
+#define ledPin 0                // select the pin for the mail delivery LED
+#define buttonPin 1             // select button pin
+
+#define brightness 1            // select mail delivery LED brightness (0-255)
+#define sensitivity 120         // sensor sensitivity (set by trial and error)
+#define CheckTimeIntervals 60   // set check intervals in minutes
 //**************************************************************
 
 // Routines to set and claer bits (used in the sleep code)
@@ -28,29 +29,37 @@ bool mail = false;      // is mail receaved
 
 void setup() {
   setup_watchdog(9); // Setup WatchDog
-  IOpins(); // Set pins to input for less energy consumtion
+  IOpins(); // Set pins to input for less energy consumption
+  int timeMultiplyer = CheckTimeIntervals * 60 / 8; // Change sleep time to 8s interval count
 }
 
 void loop() {
 
   if (f_wdt==1) {  // wait for timed out watchdog / flag is set when a watchdog timeout occurs
     f_wdt=0;       // reset flag
-    
+
     //pinMode(ledPin, INPUT);
     while(mail == false){
-  
+
       for(int i = 0; i < timeMultiplyer; i++){ // Multiply WatchDog time for longer sleep
         system_sleep();  // Send the unit to sleep
+
+        // Check if button is preesed for batteries check
+        if (buttonState == HIGH){
+          analogWrite(ledPin, brightness);
+          delay(3000);
+          analogWrite(ledPin, LOW);
+        }
       }
-      
+
       getSensor(); //read the value from the sensor
     }
-  
+
     IOpins();
     pinMode(ledPin, OUTPUT);
     analogWrite(ledPin, brightness);
     pinMode(buttonPin, INPUT);
-    
+
     int buttonState;
 
     bool removed = false;
@@ -92,7 +101,7 @@ void getSensor() {
 
 void IOpins(){
   //Set all pins to inputs w/ pull-up resistors (stop them from floating or sourcing power)
-  for (byte i=0; i<5; i++) {     
+  for (byte i=0; i<5; i++) {
     pinMode(i, INPUT);
     //digitalWrite(i, LOW);
   }
@@ -102,27 +111,27 @@ void IOpins(){
  * Sleep functions:
  */
 
-// set system into the sleep state 
+// set system into the sleep state
 // system wakes up when wtchdog is timed out
 void system_sleep() {
-  
+
   cbi(ADCSRA,ADEN);                    // switch Analog to Digitalconverter OFF
- 
+
   set_sleep_mode(SLEEP_MODE_PWR_DOWN); // sleep mode is set here
   sleep_enable();
- 
+
   sleep_mode();                        // System actually sleeps here
- 
-  sleep_disable();                     // System continues execution here when watchdog timed out 
-  
+
+  sleep_disable();                     // System continues execution here when watchdog timed out
+
   sbi(ADCSRA,ADEN);                    // switch Analog to Digitalconverter ON
-  
+
 }
 
 // 0=16ms, 1=32ms,2=64ms,3=128ms,4=250ms,5=500ms
 // 6=1 sec,7=2 sec, 8=4 sec, 9= 8sec
 void setup_watchdog(int ii) {
- 
+
   byte bb;
   int ww;
   if (ii > 9 ) ii=9;
@@ -130,7 +139,7 @@ void setup_watchdog(int ii) {
   if (ii > 7) bb|= (1<<5);
   bb|= (1<<WDCE);
   ww=bb;
- 
+
   MCUSR &= ~(1<<WDRF);
   // start timed sequence
   WDTCR |= (1<<WDCE) | (1<<WDE);
@@ -138,9 +147,8 @@ void setup_watchdog(int ii) {
   WDTCR = bb;
   WDTCR |= _BV(WDIE);
 }
-  
+
 // Watchdog Interrupt Service / is executed when watchdog timed out
 ISR(WDT_vect) {
   f_wdt=1;  // set global flag
 }
-
