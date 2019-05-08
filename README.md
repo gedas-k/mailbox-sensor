@@ -1,6 +1,7 @@
 # mailbox-sensor
 Sensor for your mailbox
 
+<<<<<<< HEAD
 Now with power checking feature!
 
 Main point of this device is to show me there is something in my mailbox. I'm unable to see inside mailbox without unlocking it and opening. Simple LED is enough for me, but you can replace it with servo lifting flag, speakers going of, wifi module sending you a message and etc. 
@@ -15,3 +16,6 @@ If you want to check if batteries still alive press and hold (up to ~8s) button 
 It's not ideal, but it works. Been using for couple months and batteries still in good shape so no need to check it every week.
 
 Pro advice: hide LED not to be seen by walk passers. Light in mailbox can spark alarming ideas for them.
+=======
+Testing Atom commits
+>>>>>>> 4a2d869bad6d504a00b296f2a8b2dc429cac8d6b
